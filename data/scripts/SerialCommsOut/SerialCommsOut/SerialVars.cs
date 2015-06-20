@@ -59,7 +59,7 @@ namespace SerialCommsOut
     }
 
     [Sandbox.Common.MySessionComponentDescriptor(Sandbox.Common.MyUpdateOrder.AfterSimulation)]
-    class Script : MySessionComponentBase
+     class Script : MySessionComponentBase
     {
         static int CurrentPlayerState = GetPlayerState(); //see Method GetPlayerState()        
         
@@ -211,10 +211,27 @@ namespace SerialCommsOut
       // but to be able to call them from chat they must be public static 
         public static void ShowSerialVars()
         {
+            if(GetPlayerState() == 0)
+            {
+                ShowPlayerData();
+            }
+
+            MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);
+            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.ToString(), 10000, MyFontEnum.Green);
+            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ToString(), 10000, MyFontEnum.Green);
+            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
+            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
+
+            MyAPIGateway.Utilities.ShowNotification("Data Collection Completed", 10000, MyFontEnum.Red);
+            //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
+        }
+
+        private static void ShowPlayerData()
+        {
             MyObjectBuilder_Character CharacterInfo = (MyObjectBuilder_Character)MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.GetObjectBuilder();
-            var characterEntity = (MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity);            
-            var CharacterInventory = (characterEntity as Sandbox.ModAPI.Interfaces.IMyInventoryOwner).GetInventory(0) as Sandbox.ModAPI.IMyInventory;            
-            Dictionary<int, SerialVars> SerialOutValues = new Dictionary<int,SerialVars>();
+            var characterEntity = (MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity);
+            var CharacterInventory = (characterEntity as Sandbox.ModAPI.Interfaces.IMyInventoryOwner).GetInventory(0) as Sandbox.ModAPI.IMyInventory;
+            Dictionary<int, SerialVars> SerialOutValues = new Dictionary<int, SerialVars>();
 
             #region object gathering
 
@@ -302,21 +319,18 @@ namespace SerialCommsOut
             //Should we break this API script into 2 Scripts one for Player and one for Ship?
             //A ship only script would be easier to attach to a programmable block until Ondrej enables local scripts
 
-            SerialVars ShipDamage = new SerialVars()
+            /*SerialVars ShipDamage = new SerialVars()
             {
                 Priority = 100,
                 ItemName = "ShipDamage",
                 CurrentValue = "50",
                 MaxValue = "100",
                 DataType = "Double"
-            };
+            };*/
             #endregion
-            
-            
 
             //Add all Desired Objects here with "SerialOutValues.Add"
-            if (GetPlayerState() == 0)
-            {
+         
                 SerialOutValues.Clear();
                 SerialOutValues.Add(PlayerHealth.Priority, PlayerHealth);
                 SerialOutValues.Add(PlayerEnergy.Priority, PlayerEnergy);
@@ -333,23 +347,16 @@ namespace SerialCommsOut
                 {
                     ScreenData += (String.Format("Priority = {0}, ItemName = {1}, CurrentValue = {2}, MaxValue = {3}, DataType = {4}", serialVars.Priority, serialVars.ItemName, serialVars.CurrentValue, serialVars.MaxValue, serialVars.DataType)) + "/\n";
                 }
-            }
-            if (GetPlayerState() != 0)
+            
+            MyAPIGateway.Utilities.ShowMissionScreen("Serial Out Data", DateTime.Now.ToString(), "Values:", ScreenData, null, "Hide Screen");
+            ScreenData = String.Empty;
+       
+            /*if (GetPlayerState() != 0)
             {
                 SerialOutValues.Add(ShipDamage.Priority, ShipDamage);
-            }   
-            MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);
+            }*/
             
-            //MyAPIGateway.Utilities.ShowMissionScreen("Serial Out Data", DateTime.Now.ToString(), "Values:", ScreenData, null, "Hide Screen");
-            //ScreenData = String.Empty;
 
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
-
-            MyAPIGateway.Utilities.ShowNotification("Data Collection Completed",  10000, MyFontEnum.Red);
-            //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
         }
 
    }
