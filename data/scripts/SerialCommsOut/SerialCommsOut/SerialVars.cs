@@ -22,22 +22,8 @@ using VRageMath;
 
 
 /*   
-  Welcome to Modding API. This is one of two sample scripts that you can modify for your needs, 
-  in this case simple script is prepared that will show Hello world message in chat. 
-  You need to run this script manually from chat to see it. To run it you first need to enable this in game 
-  (press new World, than Custom World and Mods , you should see Script1 at the top), when world with mod loads, 
-  please press F11 to see if there was any loading error during loading of the mod. When there is no mod loading errors  
-  you can activate mod by opening chat window (by pressing Enter key). Than you need to call Main method of script class. 
-   
-  To do that you need to write this command : //call SerialCommsOut SerialCommsOut.Script ShowSerialVars         //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
-
-  //call means that you want to call script
-  Script1_TestScript is name of directory (if you have more script directories e.g. Script1, Script2 ... you need to change Script1 to your actual directory)
-  TestScript.Script is name of tthe class with namespace , if you define new class you need to use new name e.g. when you create class Test in TestScript namespace
-  you need to write : TestScript.Test 
-  ShowHelloWorld is name of method, you can call only public static methods from chat window. 
-   
-   You can define your own namespaces / classes / methods to call 
+ * To execute, run the following command from the chat window:
+        //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
  */
 
 
@@ -71,9 +57,7 @@ namespace SerialCommsOut
 
         #region Get Player Data
         //Add switch case for CurrentPlayerState for each method below in this region only. 
-        //If CurrentPlayerState !=0 playerfunctions have to be obtained a different way:
-        //Call GetPlayerState and use Global Variable for switch
-        //Switch Not needed for Ship Functions, we only need to get ship functions if CurrentPlayerState !=0
+        //If CurrentPlayerState !=0 pass the stashed Player Entity - Needs to be written.
 
         static public string GetPlayerHealth(MyObjectBuilder_Character CharacterInfo)
         {
@@ -201,8 +185,7 @@ namespace SerialCommsOut
         {
             int PlayerState = 1;
             //check to see if player is solo = 0, in a cockpit = 1, chair = 2 or Cryopod = 3
-            //Use GetObjectBuilder() to get the MyObjectBuilder_EntityBase of any entity. If your entity is a cockpit you should be able to cast it to MyObjectBuilder_Cockpit.          
-           
+            //doing this in case we want a different output set depending on the situation (ex: we won't allow block/ship control for player in cryopod)   
 
             return PlayerState;
         }
@@ -213,14 +196,27 @@ namespace SerialCommsOut
         {
             if(GetPlayerState() == 0)
             {
-                ShowPlayerData();
+                //ShowPlayerData();<-------------------Add this back after Entity detection is done
             }
 
             MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
-            MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
+            string state = string.Empty;
+            var controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;      
+
+             if(controlled is IMyCharacter)
+             { state = "character"; }
+             if (controlled is Sandbox.ModAPI.Ingame.IMyCockpit)
+             { state = "cockpit"; }
+             else
+             { state = controlled.ToString(); }
+
+            MyAPIGateway.Utilities.ShowNotification(state, 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.ToString(), 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Client.ToString(), 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.IdentityId.ToString(), 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ToString(), 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
+            //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
 
             MyAPIGateway.Utilities.ShowNotification("Data Collection Completed", 10000, MyFontEnum.Red);
             //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
