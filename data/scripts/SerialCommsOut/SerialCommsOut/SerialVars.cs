@@ -62,7 +62,7 @@ namespace SerialCommsOut
         static public string GetPlayerHealth(MyObjectBuilder_Character CharacterInfo)
         {
             float? percentFloat = null;
-            if(GetPlayerState() == 0)
+            if(CurrentPlayerState == 0)
             {
                 if (!CharacterInfo.Health.HasValue)
                 {
@@ -83,7 +83,7 @@ namespace SerialCommsOut
         static public string GetPlayerEnergy(MyObjectBuilder_Character CharacterInfo)
         {
             double percentDouble = 0;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 percentDouble = CharacterInfo.Battery.CurrentCapacity * 10000000f;
             }
@@ -92,7 +92,7 @@ namespace SerialCommsOut
         static public string GetPlayerOxygen(MyObjectBuilder_Character CharacterInfo)
         {
             double percentDouble = 0;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                  percentDouble = CharacterInfo.OxygenLevel * 10000f / 100;
             }
@@ -101,7 +101,7 @@ namespace SerialCommsOut
         static public string GetPlayerDamperStatus(MyObjectBuilder_Character CharacterInfo)
         {
             bool BitVal = false;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 BitVal = CharacterInfo.DampenersEnabled;
             }
@@ -110,7 +110,7 @@ namespace SerialCommsOut
         static public string GetPlayerJetPackStatus(MyObjectBuilder_Character CharacterInfo)
         {
             bool BitVal = false;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 BitVal = CharacterInfo.JetpackEnabled;
             }
@@ -119,7 +119,7 @@ namespace SerialCommsOut
         static public string GetPlayerSuitLightStatus(MyObjectBuilder_Character CharacterInfo)
         {
             bool BitVal = false;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 BitVal = CharacterInfo.LightEnabled;
             }
@@ -128,7 +128,7 @@ namespace SerialCommsOut
         static public string GetPlayerSpeed(MyObjectBuilder_Character CharacterInfo)
         {
             string StringVal = string.Empty;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             { 
             float Xvalue = CharacterInfo.LinearVelocity.X;
             float Yvalue = CharacterInfo.LinearVelocity.Y;
@@ -141,7 +141,7 @@ namespace SerialCommsOut
         static public string GetPlayerCurrentInventory(Sandbox.ModAPI.IMyInventory CharacterInventory)
         {
             string InvVol = string.Empty;            
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 InvVol = (CharacterInventory.CurrentVolume.RawValue /100).ToString();
             }
@@ -154,7 +154,7 @@ namespace SerialCommsOut
         static public string GetPlayerMaxInventory(Sandbox.ModAPI.IMyInventory CharacterInventory)
         {
             string InvVol = string.Empty;         
-                if (GetPlayerState() == 0)
+                if (CurrentPlayerState == 0)
                 {
                     InvVol = (CharacterInventory.MaxVolume.RawValue /100).ToString();
                 }
@@ -168,7 +168,7 @@ namespace SerialCommsOut
         static public string GetPlayerAntennaStatus(MyObjectBuilder_Character CharacterInfo)
         {
             bool BitVal = false;
-            if (GetPlayerState() == 0)
+            if (CurrentPlayerState == 0)
             {
                 BitVal = CharacterInfo.EnableBroadcasting;
             }
@@ -177,7 +177,16 @@ namespace SerialCommsOut
     #endregion
 
         #region Get Ship Data
+        static public string GetShipSomething()
+        {
+            string SomeShipData = string.Empty;
+            if (CurrentPlayerState > 0)
+            {
 
+
+            }
+            return SomeShipData;
+        }
         #endregion
 
 
@@ -186,7 +195,22 @@ namespace SerialCommsOut
             int PlayerState = 1;
             //check to see if player is solo = 0, in a cockpit = 1, chair = 2 or Cryopod = 3
             //doing this in case we want a different output set depending on the situation (ex: we won't allow block/ship control for player in cryopod)   
+            
+            string state = string.Empty;
+            var controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;
 
+            if (controlled is IMyCharacter)
+            {
+                state = "character";
+            }
+            else if (controlled is Sandbox.ModAPI.Ingame.IMyCockpit)
+            {
+                state = "cockpit";
+            }
+            else if (!(controlled is IMyCharacter) && (!(controlled is Sandbox.ModAPI.Ingame.IMyCockpit)))
+            {
+                state = controlled.ToString();
+            }
             return PlayerState;
         }
 
@@ -194,30 +218,21 @@ namespace SerialCommsOut
       // but to be able to call them from chat they must be public static 
         public static void ShowSerialVars()
         {
-            if(GetPlayerState() == 0)
-            {
-                //ShowPlayerData();<-------------------Add this back after Entity detection is done
-            }
-
             MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);
-            string state = string.Empty;
-            var controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;      
+            
+            if(CurrentPlayerState == 0)
+            {
 
-             if(controlled is IMyCharacter)
-             { state = "character"; }
-             if (controlled is Sandbox.ModAPI.Ingame.IMyCockpit)
-             { state = "cockpit"; }
-             else
-             { state = controlled.ToString(); }
-
-            MyAPIGateway.Utilities.ShowNotification(state, 10000, MyFontEnum.Green);
+                ShowPlayerData();
+            }
+            
+            //MyAPIGateway.Utilities.ShowNotification(state, 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Client.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.IdentityId.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
-
             MyAPIGateway.Utilities.ShowNotification("Data Collection Completed", 10000, MyFontEnum.Red);
             //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
         }
@@ -347,7 +362,7 @@ namespace SerialCommsOut
             MyAPIGateway.Utilities.ShowMissionScreen("Serial Out Data", DateTime.Now.ToString(), "Values:", ScreenData, null, "Hide Screen");
             ScreenData = String.Empty;
        
-            /*if (GetPlayerState() != 0)
+            /*if (CurrentPlayerState != 0)
             {
                 SerialOutValues.Add(ShipDamage.Priority, ShipDamage);
             }*/
