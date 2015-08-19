@@ -37,18 +37,18 @@ namespace SerialCommsOut
     //Getting Typed data from the serial buffer silently blocks new data until the read is complete, which could lead to lost data.
     public class SerialVars
     {
-        public int Priority { get; set; }   // This needs to be a unique number to set the priority of which messages are sent.
+        public string DataType { get; set; } // Type of data. Float, Int, string, etc. Different Hardware components may need to math some stuff to display data properly. 
         public string ItemName { get; set; } //friendly name i.e. "health"
         public string CurrentValue { get; set; } //health percentage etc.
         public string MaxValue { get; set; } // Maximum range for determining what to set the Analog pin value to in Hardware
-        public string DataType { get; set; } // Type of data. Float, Int, string, etc. Different Hardware components may need to math some stuff to display data properly. 
+        
     }
 
     [Sandbox.Common.MySessionComponentDescriptor(Sandbox.Common.MyUpdateOrder.AfterSimulation)]
      class Script : MySessionComponentBase
     {
-        static int CurrentPlayerState = GetPlayerState(); //see Method GetPlayerState()        
-        
+        public static int CurrentPlayerState{get; set;}
+        public static IMyEntity EntityStash { get; set; }
         public static void ColllectDataForSerial()
         {
 
@@ -195,21 +195,35 @@ namespace SerialCommsOut
             int PlayerState = 1;
             //check to see if player is solo = 0, in a cockpit = 1, chair = 2 or Cryopod = 3
             //doing this in case we want a different output set depending on the situation (ex: we won't allow block/ship control for player in cryopod)   
-            
+            IMyEntity controlled = null;
             string state = string.Empty;
-            var controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;
+            try
+            {
+                 controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;
+            }
+            catch
+            {
+                if (EntityStash != null)
+                {
+                     controlled = EntityStash;
+                }
+            }
+           // var controlled = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;
 
             if (controlled is IMyCharacter)
             {
                 state = "character";
+                PlayerState = 0;
             }
             else if (controlled is Sandbox.ModAPI.Ingame.IMyCockpit)
             {
                 state = "cockpit";
+                PlayerState = 1;
             }
             else if (!(controlled is IMyCharacter) && (!(controlled is Sandbox.ModAPI.Ingame.IMyCockpit)))
             {
                 state = controlled.ToString();
+                PlayerState = 3;
             }
             return PlayerState;
         }
@@ -218,11 +232,19 @@ namespace SerialCommsOut
       // but to be able to call them from chat they must be public static 
         public static void ShowSerialVars()
         {
-            MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);
-            
-            if(CurrentPlayerState == 0)
+            CurrentPlayerState = GetPlayerState();
+            try
             {
-
+                EntityStash = MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity;
+            }
+            catch
+            {
+                EntityStash = null;
+            }
+            MyAPIGateway.Utilities.ShowNotification("Data Collection Started", 10000, MyFontEnum.Red);            
+            if(CurrentPlayerState == 0 || EntityStash != null)
+            {
+                
                 ShowPlayerData();
             }
             
@@ -234,7 +256,7 @@ namespace SerialCommsOut
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.ToString(), 10000, MyFontEnum.Green);
             //MyAPIGateway.Utilities.ShowNotification(MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.ToString(), 10000, MyFontEnum.Green);
             MyAPIGateway.Utilities.ShowNotification("Data Collection Completed", 10000, MyFontEnum.Red);
-            //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
+            
         }
 
         private static void ShowPlayerData()
@@ -366,7 +388,7 @@ namespace SerialCommsOut
             {
                 SerialOutValues.Add(ShipDamage.Priority, ShipDamage);
             }*/
-            
+            //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
 
         }
 
