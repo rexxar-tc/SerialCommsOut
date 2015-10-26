@@ -22,7 +22,7 @@ using VRageMath;
 
 
 /*   
- * To execute, run the following command from the chat window:
+ * To execute this script, run the following command from the chat window:
         //call SerialCommsOut_SerialCommsOut SerialCommsOut.Script ShowSerialVars
  */
 
@@ -37,6 +37,7 @@ namespace SerialCommsOut
     //Getting Typed data from the serial buffer silently blocks new data until the read is complete, which could lead to lost data.
     public class SerialVars
     {
+        public int Priority { get; set; }
         public string DataType { get; set; } // Type of data. Float, Int, string, etc. Different Hardware components may need to math some stuff to display data properly. 
         public string ItemName { get; set; } //friendly name i.e. "health"
         public string CurrentValue { get; set; } //health percentage etc.
@@ -98,6 +99,26 @@ namespace SerialCommsOut
             }
             return percentDouble.ToString();            
         }
+        static public string GetPlayerHydrogen(MyObjectBuilder_Character CharacterInfo)
+        {
+            double percentDouble = 0;
+            string currentamount = string.Empty;
+            string id = string.Empty;
+            if (CurrentPlayerState == 0)
+            {
+                //percentDouble = CharacterInfo.StoredGases..Capacity (* 10000f / 100);
+                List<MyObjectBuilder_Character.StoredGas> StoredGases = CharacterInfo.StoredGases;
+                foreach (MyObjectBuilder_Character.StoredGas gas in StoredGases)
+                {
+                     id = gas.Id.ToString();
+                     if (id == "MyObjectBuilder_GasProperties/Hydrogen")
+                     { percentDouble = gas.FillLevel *100; }
+                     else { percentDouble = 0; }
+
+                }
+            }
+            return percentDouble.ToString();
+        }
         static public string GetPlayerDamperStatus(MyObjectBuilder_Character CharacterInfo)
         {
             bool BitVal = false;
@@ -138,32 +159,49 @@ namespace SerialCommsOut
             }
             return StringVal;
         }
-        static public string GetPlayerCurrentInventory(Sandbox.ModAPI.IMyInventory CharacterInventory)
+        static public string GetPlayerMaxInventory()
         {
-            string InvVol = string.Empty;            
-            if (CurrentPlayerState == 0)
+            var characterEntity = (MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity);
+            var invOwner = (characterEntity as Sandbox.ModAPI.Interfaces.IMyInventoryOwner);
+            float InvVol = 0;   
+            if (invOwner != null && invOwner.InventoryCount > 0)
             {
-                InvVol = (CharacterInventory.CurrentVolume.RawValue /100).ToString();
-            }
-            else
-            {
-                InvVol = "4000";
-            }
-            return InvVol;
-        }
-        static public string GetPlayerMaxInventory(Sandbox.ModAPI.IMyInventory CharacterInventory)
-        {
-            string InvVol = string.Empty;         
+                var inv = invOwner.GetInventory(0);
+
                 if (CurrentPlayerState == 0)
                 {
-                    InvVol = (CharacterInventory.MaxVolume.RawValue /100).ToString();
+                    InvVol = (float)inv.MaxVolume;
+                    //values[Icons.INVENTORY] = ((float)inv.CurrentVolume / (float)inv.MaxVolume) * 100;
                 }
                 else
                 {
-                    InvVol = "4000";
-                }   
-            
-            return InvVol;
+                    InvVol = 4000F;
+                }
+                    
+            }                               
+            return InvVol.ToString();
+        }
+        static public string GetPlayerCurrentInventory()
+        {
+            var characterEntity = (MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity);
+            var invOwner = (characterEntity as Sandbox.ModAPI.Interfaces.IMyInventoryOwner);
+            float InvVol = 0;
+            if (invOwner != null && invOwner.InventoryCount > 0)
+            {
+                var inv = invOwner.GetInventory(0);
+
+                if (CurrentPlayerState == 0)
+                {
+                    InvVol = (float)inv.CurrentVolume;
+                    //values[Icons.INVENTORY] = ((float)inv.CurrentVolume / (float)inv.MaxVolume) * 100;
+                }
+                else
+                {
+                    InvVol = 4000F;
+                }
+
+            }
+            return InvVol.ToString();
         }
         static public string GetPlayerAntennaStatus(MyObjectBuilder_Character CharacterInfo)
         {
@@ -262,8 +300,8 @@ namespace SerialCommsOut
         private static void ShowPlayerData()
         {
             MyObjectBuilder_Character CharacterInfo = (MyObjectBuilder_Character)MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity.GetObjectBuilder();
-            var characterEntity = (MyAPIGateway.Session.Player.Controller.ControlledEntity.Entity);
-            var CharacterInventory = (characterEntity as Sandbox.ModAPI.Interfaces.IMyInventoryOwner).GetInventory(0) as Sandbox.ModAPI.IMyInventory;
+            
+           
             Dictionary<int, SerialVars> SerialOutValues = new Dictionary<int, SerialVars>();
 
             #region object gathering
@@ -292,9 +330,17 @@ namespace SerialCommsOut
                 MaxValue = "100",
                 DataType = "Double"
             };
-            SerialVars PlayerDampers = new SerialVars()
+            SerialVars PlayerHydrogen = new SerialVars()
             {
                 Priority = 3,
+                ItemName = "PlayerHydrogen",
+                CurrentValue = SerialCommsOut.Script.GetPlayerHydrogen(CharacterInfo),
+                MaxValue = "100",
+                DataType = "Double"
+            };
+            SerialVars PlayerDampers = new SerialVars()
+            {
+                Priority = 4,
                 ItemName = "PlayerDampers",
                 CurrentValue = SerialCommsOut.Script.GetPlayerDamperStatus(CharacterInfo),
                 MaxValue = "true",
@@ -302,7 +348,7 @@ namespace SerialCommsOut
             };
             SerialVars PlayerJetPack = new SerialVars()
             {
-                Priority = 4,
+                Priority = 5,
                 ItemName = "PlayerJetPack",
                 CurrentValue = SerialCommsOut.Script.GetPlayerJetPackStatus(CharacterInfo),
                 MaxValue = "true",
@@ -310,7 +356,7 @@ namespace SerialCommsOut
             };
             SerialVars PlayerSuitLight = new SerialVars()
             {
-                Priority = 5,
+                Priority = 6,
                 ItemName = "PlayerSuitLight",
                 CurrentValue = SerialCommsOut.Script.GetPlayerSuitLightStatus(CharacterInfo),
                 MaxValue = "true",
@@ -318,7 +364,7 @@ namespace SerialCommsOut
             };
             SerialVars PlayerSpeed = new SerialVars()
             {
-                Priority = 6,
+                Priority = 7,
                 ItemName = "PlayerSpeed",
                 CurrentValue = SerialCommsOut.Script.GetPlayerSpeed(CharacterInfo),
                 MaxValue = "true",
@@ -326,23 +372,23 @@ namespace SerialCommsOut
             };
             SerialVars PlayerCurrentInventory = new SerialVars()
             {
-                Priority = 7,
+                Priority = 8,
                 ItemName = "PlayerCurrentInventory",
-                CurrentValue = SerialCommsOut.Script.GetPlayerCurrentInventory(CharacterInventory),
+                CurrentValue = SerialCommsOut.Script.GetPlayerCurrentInventory(),
                 MaxValue = "true",
                 DataType = "Bit"
             };
             SerialVars PlayerMaxInventory = new SerialVars()
             {
-                Priority = 8,
+                Priority = 9,
                 ItemName = "PlayerMaxInventory",
-                CurrentValue = SerialCommsOut.Script.GetPlayerMaxInventory(CharacterInventory),
+                CurrentValue = SerialCommsOut.Script.GetPlayerMaxInventory(),
                 MaxValue = "true",
                 DataType = "Bit"
             };
             SerialVars PlayerAntenna = new SerialVars()
             {
-                Priority = 9,
+                Priority = 10,
                 ItemName = "PlayerAntenna",
                 CurrentValue = SerialCommsOut.Script.GetPlayerAntennaStatus(CharacterInfo),
                 MaxValue = "true",
@@ -368,6 +414,7 @@ namespace SerialCommsOut
                 SerialOutValues.Add(PlayerHealth.Priority, PlayerHealth);
                 SerialOutValues.Add(PlayerEnergy.Priority, PlayerEnergy);
                 SerialOutValues.Add(PlayerOxygen.Priority, PlayerOxygen);
+                SerialOutValues.Add(PlayerHydrogen.Priority, PlayerHydrogen);
                 SerialOutValues.Add(PlayerDampers.Priority, PlayerDampers);
                 SerialOutValues.Add(PlayerJetPack.Priority, PlayerJetPack);
                 SerialOutValues.Add(PlayerSuitLight.Priority, PlayerSuitLight);
